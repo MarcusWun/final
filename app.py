@@ -103,6 +103,12 @@ def index():
     return render_template("index.html", title='Portfolio')
 
 
+@app.route("/quote")
+@login_required
+def quote():
+    return render_template("quote.html")
+
+
 # register route
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -151,7 +157,7 @@ def about():
     return render_template('about.html', title='About')
 
 
-# This routine is called from the home page, updates martket information and returns dictionary stocks
+# This routine is called from the index page, updates martket information and returns dictionary stocks
 @app.route("/api/stock")
 def get_stock():
 
@@ -175,6 +181,38 @@ def get_stock():
             "timestamp": time.time()
         }
     return jsonify(stocks)
+
+
+@app.route("/get_stock_data", methods=["POST"])
+def get_stock_data():
+    data = request.get_json()
+    symbol = data.get("symbol")
+    if not symbol:
+        return jsonify({"error": "Missing symbol"}), 400
+
+    try:
+        stock = yf.Ticker(symbol)
+        info = stock.info
+
+        # You can customize these fields as you wish
+        stock_data = {
+            "Symbol": symbol.upper(),
+            "Current Price": info.get("currentPrice"),
+            "Previous Close": info.get("previousClose"),
+            "Open": info.get("open"),
+            "Volume": info.get("volume"),
+            "Average Volume": info.get("averageVolume"),
+            "Market Cap": info.get("marketCap"),
+            "PE Ratio": info.get("trailingPE"),
+            "1Y Target Estimate": info.get("targetMeanPrice"),
+            "52 Week High": info.get("fiftyTwoWeekHigh"),
+        }
+
+        return jsonify(stock_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 if __name__ == "__main__":

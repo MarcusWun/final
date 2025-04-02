@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block main %}
-
+<div class="container-fluid">
     <div class="content-section">
         <form method="POST" action="">
             {{ form.hidden_tag() }}
@@ -47,9 +47,11 @@
             </div>
         </form>
     </div>
+
     <div class="border-top pt-3">
         <small class="text-muted">
             Need An Account? <a class="ml-2" href="{{ url_for('register') }}">Sign Up Now</a>
         </small>
     </div>
+</div>
 {% endblock main %}

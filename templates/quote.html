@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block main %}
+<div class="container mt-5">
+  <div class="row">
+    <!-- Column 1: Stock Info Table -->
+    <div class="col-md-6">
+      <table class="table table-bordered" id="stock-table">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody id="stock-data">
+          <!-- Data will be populated here via JS -->
+          <tr><td colspan="2" class="text-center">No data yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Column 2: Form -->
+    <div class="col-md-6">
+      <form id="stock-form">
+        <div class="mb-3">
+          <label for="symbol" class="form-label">Stock Symbol</label>
+          <input type="text" class="form-control" id="symbol" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Get Stock Data</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/static/quote.js"></script>
+{% endblock %}
