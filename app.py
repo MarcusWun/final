@@ -106,7 +106,7 @@ def index():
 @app.route("/quote")
 @login_required
 def quote():
-    return render_template("quote.html")
+    return render_template("quote.html", title="Market Quote")
 
 
 # register route
@@ -197,6 +197,7 @@ def get_stock_data():
         # You can customize these fields as you wish
         stock_data = {
             "Symbol": symbol.upper(),
+            "Name": info.get('longName', 'Name not found'),
             "Current Price": info.get("currentPrice"),
             "Previous Close": info.get("previousClose"),
             "Open": info.get("open"),

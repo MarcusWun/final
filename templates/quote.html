@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 
 {% block main %}
-<div class="container mt-5">
-  <div class="row">
+<div class="container custom-container">
+  <div class="row g-4">
     <!-- Column 1: Stock Info Table -->
-    <div class="col-md-6">
+    <div class="col-md-8">
       <table class="table table-bordered" id="stock-table">
         <thead>
           <tr>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Column 2: Form -->
-    <div class="col-md-6">
+    <div class="col-md-4">
       <form id="stock-form">
         <div class="mb-3">
           <label for="symbol" class="form-label">Stock Symbol</label>
