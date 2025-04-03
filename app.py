@@ -103,10 +103,151 @@ def index():
     return render_template("index.html", title='Portfolio')
 
 
+# This route will handle the AJAX request for the quote page
 @app.route("/quote")
 @login_required
 def quote():
     return render_template("quote.html", title="Market Quote")
+
+
+# This route will handle the buy request for a stock
+@app.route("/buy", methods=['GET', 'POST'])
+@login_required
+def buy():
+
+    if request.method == 'POST':
+        # Handle the form submission for buying stocks
+
+        symbol = request.form.get('symbol').upper()  # Get the symbol from the request args if available
+        if not symbol:
+            flash('Please provide a stock symbol.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+
+        shares = int(request.form.get('shares'))  # Get the shares from the request args if available
+        if not shares:
+            flash('Please provide the number of shares.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+        if shares <= 0:
+            flash('Shares must be a positive integer.', 'danger')
+            return render_template("buy.html", title="Buy Stock")   
+
+        try:
+            stock = yf.Ticker(symbol)
+            info = stock.info
+        except Exception as e:
+            flash('Invalid stock symbol. Please try again.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+
+        purchase_price = info.get('regularMarketPrice')
+        if purchase_price is None:
+            flash('Could not retrieve stock price. Please try again.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+        
+        query = db.execute("SELECT cash_available FROM users WHERE id = ?", session['user_id'])
+        if len(query) != 1:
+            flash('User not found.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+        cash_available = query[0]['cash_available']
+        
+        if cash_available is None:
+            flash('Could not retrieve user cash available.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+        
+        if cash_available < float(purchase_price) * int(shares):
+            flash('Insufficient funds to complete this transaction.', 'danger')
+            return render_template("buy.html", title="Buy Stock")
+        
+        # Update the user's cash available
+        new_cash_available = cash_available - (float(purchase_price) * int(shares))
+        db.execute(
+            "UPDATE users SET cash_available = ? WHERE id = ?",
+            new_cash_available, session['user_id']
+        )
+
+        # Insert the transaction into the history table
+        db.execute(
+            "INSERT INTO history (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)",
+            session['user_id'], symbol, int(shares), float(purchase_price)
+        )
+
+        flash(
+            f'Successfully purchased {shares} shares of {symbol} at {usd(float(purchase_price))}.',
+            'success'
+        )
+        
+        return redirect(url_for('index'))  # Redirect to the index page after successful purchase
+
+    cash_available = db.execute(
+        "SELECT cash_available FROM users WHERE id = ?",
+        session['user_id']
+    )
+    flash('You have {} available to invest.'.format(usd(cash_available[0]['cash_available'])) 
+          if cash_available and len(cash_available) == 1 
+          else 'Could not retrieve your cash available.', 'info')
+    return render_template("buy.html", title="Buy Stock")
+
+
+# This is the route for the sell page, which will handle both GET and POST requests
+@app.route("/sell", methods=['GET', 'POST'])
+@login_required
+def sell():
+
+    if request.method == 'POST':
+        # Handle the form submission for buying stocks
+        symbol = request.form.get('symbol').upper()  # Get the symbol from the request args if available
+        if not symbol:
+            flash('Please provide a stock symbol.', 'danger')
+            return render_template("sell.html", title="Sell Stock")
+        
+        shares = int(request.form.get('shares'))  # Get the shares from the request args if available
+        if not shares:
+            flash('Please provide the number of shares.', 'danger')
+            return render_template("sell.html", title="Sell Stock")
+        if shares <= 0:
+            flash('Shares must be a positive integer.', 'danger')
+            return render_template("sell.html", title="Sell Stock")
+        
+        query = db.execute("SELECT SUM(shares) AS total_shares FROM history WHERE user_id = ? AND symbol = ?", session['user_id'], symbol)
+        if len(query) != 1 or query[0]['total_shares'] is None:
+            flash('You do not own any shares of {}.'.format(symbol), 'danger')
+            return render_template("sell.html", title="Sell Stock")
+
+        total_shares = query[0]['total_shares']
+        if total_shares < shares:
+            flash('You cannot sell more shares than you own. You currently own {} shares.'.format(total_shares), 'danger')
+            return render_template("sell.html", title="Sell Stock")
+
+        # Get the current market price for the stock
+        stock = yf.Ticker(symbol)
+        info = stock.info
+        if info is None or info.get('regularMarketPrice') is None:
+            flash('Could not retrieve stock price. Please try again.', 'danger')
+            return render_template("sell.html", title="Sell Stock")
+            
+        market_price = info.get('regularMarketPrice')
+
+        # Update the user's cash available
+        new_cash_available = db.execute("SELECT cash_available FROM users WHERE id = ?", session['user_id'])[0]['cash_available'] + (float(market_price) * int(shares))
+        db.execute("UPDATE users SET cash_available = ? WHERE id = ?", new_cash_available, session['user_id'])
+
+        # Insert the transaction into the history table
+        db.execute("INSERT INTO history (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)",session['user_id'], symbol, -int(shares), float(market_price))
+
+        flash(f'Successfully sold {shares} shares of {symbol} at {usd(float(market_price))}.', 'success')
+        return redirect(url_for('index'))  # Redirect to the index page after successful sale
+    
+    rows = db.execute("SELECT symbol FROM history WHERE user_id = ? GROUP BY symbol", session['user_id'])
+    ticker_list = []
+    if len(rows) > 0:
+        # Populate the ticker list with symbols the user owns
+        for row in rows:
+            ticker_list.append(row['symbol'])
+        # Render the sell form with the list of symbols
+        return render_template("sell.html", title="Sell Stock", ticker_list=ticker_list)
+    else:
+        flash('You do not own any stocks to sell.', 'info')
+        return redirect(url_for('index'))  # Redirect to the index page if no stocks are owned
+
 
 
 # register route
