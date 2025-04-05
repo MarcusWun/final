@@ -6,7 +6,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from cs50 import SQL
-# from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime 
 import yfinance as yf
 import time
 import sqlite3
@@ -29,13 +29,6 @@ app.jinja_env.filters["usd"] = usd
 bcrypt = Bcrypt(app)
 
 # initialize sqlite3 database access
-# fd_database has two tables as follows:
-# schema CREATE TABLE users (
-# id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, username TEXT NOT NULL, hash TEXT NOT NULL, 
-# cash_funded NUMERIC NOT NULL DEFAULT 10000.00, cash_available NUMERIC DEFAULT 10000.00)
-# schema CREATE TABLE history (
-# transaction_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, symbol TEXT, shares INTEGER, price NUMERIC, 
-# created_at DATETIME DEFAULT TIMESTAMP)
 db = SQL("sqlite:///fp_database.db")
 
 # create global list of dictionaries for portfolio and watch list
@@ -249,6 +242,32 @@ def sell():
         return redirect(url_for('index'))  # Redirect to the index page if no stocks are owned
 
 
+@app.route("/history")
+@login_required
+def history():
+    """
+    Route to display the user's transaction history.
+    """
+    # Query the database for the user's transaction history
+    transactions = db.execute(
+        "SELECT symbol, shares, price, created_at FROM history WHERE user_id = ? ORDER BY created_at DESC",
+        session['user_id']
+    )
+
+    if len(transactions) == 0:
+        flash('No transaction history found.', 'info')
+        return redirect(url_for('index'))
+
+    for transaction in transactions:
+        if transaction['shares'] < 0:
+            # If shares are negative, it indicates a sale
+            transaction['action'] = 'Sold'
+        else:
+            # Otherwise, it's a purchase
+            transaction['action'] = 'Purchased' 
+
+    return render_template("history.html", title="Transaction History", transactions=transactions)
+
 
 # register route
 @app.route("/register", methods=['GET', 'POST'])
@@ -291,6 +310,56 @@ def logout():
     session.clear()
     return redirect(url_for('about'))
 
+
+# This is just the cash management page, which allows the user to fund their account with cash.
+@app.route("/cash_management", methods=['GET', 'POST'])
+@login_required
+def cash_management():
+
+    if request.method == 'POST':
+        # Handle the form submission for funding the account
+        amount = request.form.get('amount', type=float)
+        if amount is None:
+            return redirect(url_for('index'))  # Redirect to home page if no amount is provided
+        
+        action = request.form.get('action').lower()  # Get the action (add or subtract)
+        if action not in ['add', 'subtract']:
+            flash('Invalid action specified. Please choose either "add" or "subtract".', 'danger')
+            return redirect(url_for('cash_management'))
+        
+        if action == 'subtract':
+            amount = -abs(amount)  # Ensure the amount is negative for subtraction
+
+        query = db.execute("SELECT cash_available, cash_funded FROM users WHERE id = (?)", session["user_id"])
+        cash_available = float(query[0]['cash_available']) if len(query) == 1 else None
+        cash_funded = float(query[0]['cash_funded']) if len(query) == 1 else None
+
+        if action == "subtract" and (cash_available is None or cash_available < abs(amount)):
+            # Prevent subtracting more than available
+            flash('Insufficient funds to subtract that amount.', 'danger')
+            return redirect(url_for('cash_management'))
+        
+        cash_available = cash_available + amount
+        cash_funded = cash_funded + amount  # Update the cash_funded to reflect the total funds added/subtracted
+
+        db.execute("UPDATE users SET cash_available = ?, cash_funded = ? WHERE id = ?",
+                   cash_available, cash_funded, session["user_id"])
+        
+        flash_message = 'Successfully added ${:.2f} to your account.'.format(amount) if action == 'add' else 'Successfully withdrew ${:.2f} from your account.'.format(abs(amount))
+        flash(flash_message, 'success')
+        return redirect(url_for('index'))  # Redirect to the index page after successful funding
+    
+    query = db.execute("SELECT cash_available FROM users WHERE id = (?)", session["user_id"])
+    balance = float(query[0]['cash_available']) if len(query) == 1 else None
+    flash_message = 'You currently have ${:.2f} available in your account.'.format(balance) if balance is not None else 'Could not retrieve your cash available.'
+    if balance is not None:
+        flash(flash_message, 'info')
+    else:   
+        # Handle the case where the user's cash_available could not be retrieved
+        flash('Could not retrieve your cash available. Please try again later.', 'danger')
+        return redirect(url_for('index'))
+    return render_template("cash.html", title="Cash Management", balance=balance)
+            
 
 # This is just a dummy page
 @app.route("/about")
