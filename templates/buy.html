@@ -1,6 +1,12 @@
 {% extends "layout.html" %}
 
 {% block main %}
+
+<div class="container text_center">
+    <h2>Buy shares</h2>
+</div>
+
+
 <div class="container">
     <form action="/buy" method="post">
         <div class="mb-3">
@@ -9,7 +15,11 @@
         <div class="mb-3">
             <input autocomplete="off" class="form-control mx-auto w-auto" name="shares" placeholder="Shares" type="number" min="1" step="1">
         </div>
-        <button class="btn btn-primary" type="submit">Buy</button>
+
+        <div class="container text-center">
+            <button class="btn btn-primary" type="submit">Buy</button>
+        </div>
+
     </form>
 </div>
 {% endblock main %}
