@@ -404,7 +404,14 @@ def get_stock_data():
         stock = yf.Ticker(symbol)
         info = stock.info
 
-        # You can customize these fields as you wish
+        hist = stock.history(period="6mo", interval="1d")
+        hist = hist.dropna()
+        chart_data = {
+            "dates": hist.index.strftime("%Y-%m-%d").tolist(),
+            "prices": hist["Close"].round(2).tolist()
+        }
+
+        # My own list of fields
         stock_data = {
             "Symbol": symbol.upper(),
             "Name": info.get('longName', 'Name not found'),
@@ -417,7 +424,10 @@ def get_stock_data():
             "PE Ratio": info.get("trailingPE"),
             "1Y Target Estimate": info.get("targetMeanPrice"),
             "52 Week High": info.get("fiftyTwoWeekHigh"),
+            "chart": chart_data  # Include the chart data in the response
         }
+
+        print(stock_data)  # For debugging purposes, to see the stock data being returned
 
         return jsonify(stock_data)
     except Exception as e:
