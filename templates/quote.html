@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 
 {% block main %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="container">
     <h2>Stock Quote</h2>
 </div>
@@ -22,6 +25,11 @@
           <tr><td colspan="2" class="text-center">No data yet</td></tr>
         </tbody>
       </table>
+
+      <div class="mt-4">
+        <canvas id="priceChart" height="200"></canvas>
+      </div>
+
     </div>
 
     <!-- Column 2: Form -->

@@ -1,3 +1,49 @@
+// 
+
+let chartInstance = null;
+
+function drawChart(dates, prices) {
+  const ctx = document.getElementById("priceChart").getContext("2d");
+
+  if (chartInstance) {
+    chartInstance.destroy(); // Clear previous chart
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: dates,
+      datasets: [{
+        label: "Close Price (USD)",
+        data: prices,
+        borderColor: "rgba(75, 192, 192, 1)",
+        fill: false,
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: "Date"
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: "Price (USD)"
+          }
+        }
+      }
+    }
+  });
+}
+
+
 // Currency formatter (USD)
 const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -71,6 +117,23 @@ document.getElementById("stock-form").addEventListener("submit", function (e) {
           });
           
         tableBody.innerHTML = rows;
+
+        // Draw the chart if data is available
+
+        if (data.chart && data.chart.dates && data.chart.prices) {
+          drawChart(data.chart.dates, data.chart.prices);
+        }
+
+        else {
+          // Clear the chart if no data is available
+          if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+          }
+          // Optionally, you can display a message indicating no chart data
+          console.log("No chart data available");
+        }
+
       })
       .catch(error => {
         tableBody.innerHTML = `<tr><td colspan='2'>Error fetching data</td></tr>`;

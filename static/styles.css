@@ -7,7 +7,6 @@
 body {
     background: #fafafa;
     color: #333333;
-    margin-top: 5rem;
   }
 
 h1, h2, h3, h4, h5, h6 {
@@ -27,17 +26,16 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
   }
 
-.content-section {
+/* .content-section {
     background: #ffffff;
     padding: 10px 20px;
     border: 1px solid #dddddd;
     border-radius: 3px;
     margin-bottom: 20px;
-  }
+  } */
 
 table {
-
-    margin: 10px;
+    margin: 5px;
 }
 
 .container{
@@ -50,7 +48,7 @@ table {
     max-width: 1400px; /* Set a max-width for the container */
     width: 100%;
     margin: 0 auto; /* Center the container */
-    padding: 20px; /* Add some padding around the content */
+    /* padding: 20px; */
 }
 
 h1 {
