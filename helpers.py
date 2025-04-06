@@ -1,4 +1,4 @@
-# import requests
+# This file contains helper functions for the application.
 
 from flask import session, redirect
 # from flask import redirect, render_template, session

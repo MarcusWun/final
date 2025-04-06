@@ -1,4 +1,4 @@
-// 
+// This file contains the JavaScript code for handling the stock data retrieval and chart rendering
 
 let chartInstance = null;
 

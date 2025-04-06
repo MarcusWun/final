@@ -1,3 +1,5 @@
+# This is the main flask application for the tradder application. This file contains the main routes and logic for the application.
+
 from helpers import login_required, usd
 from flask import Flask, jsonify, render_template, redirect, render_template, session, flash, url_for, request
 from flask_session import Session

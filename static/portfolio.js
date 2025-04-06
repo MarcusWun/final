@@ -1,3 +1,5 @@
+// This script fetches stock data from the server and updates the HTML table periodically.
+
 async function fetchStockData() {
     try {
         const response = await fetch('/api/stock');
