@@ -429,8 +429,6 @@ def get_stock_data():
             "chart": chart_data  # Include the chart data in the response
         }
 
-        print(stock_data)  # For debugging purposes, to see the stock data being returned
-
         return jsonify(stock_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
