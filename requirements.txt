@@ -1,5 +1,10 @@
-Flask
-Flask-Session
+Flask-session
 requests
 yfinance
 sqlite3
+flask
+flask_bcrypt
+flask_wtf
+cs50
+datetime
+time
